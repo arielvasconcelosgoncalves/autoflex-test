@@ -14,6 +14,7 @@ model Product {
   price     Decimal  @db.Decimal(10, 2)
 
   materials ProductRawMaterial[]
+  simulationItems ProductionSimulationItem[]  // 👈 ADICIONE ISSO
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -43,4 +44,25 @@ model ProductRawMaterial {
   rawMaterial      RawMaterial @relation(fields: [rawMaterialId], references: [id], onDelete: Cascade)
 
   @@unique([productId, rawMaterialId])
+}
+
+model ProductionSimulation {
+  id        Int      @id @default(autoincrement())
+  totalValue Float
+  createdAt DateTime @default(now())
+
+  items ProductionSimulationItem[]
+}
+
+model ProductionSimulationItem {
+  id            Int   @id @default(autoincrement())
+  quantity      Int
+  unitPrice     Float
+  total         Float
+
+  productId     Int
+  simulationId  Int
+
+  product       Product @relation(fields: [productId], references: [id])
+  simulation    ProductionSimulation @relation(fields: [simulationId], references: [id])
 }
