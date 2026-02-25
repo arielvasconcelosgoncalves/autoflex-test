@@ -1,0 +1,132 @@
+import { useEffect, useState } from "react";
+import { api } from "../api/api";
+
+interface RawMaterial {
+  id: number;
+  code: string;
+  name: string;
+  cost: number;
+}
+
+export default function RawMaterials() {
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [materials, setMaterials] = useState<RawMaterial[]>([]);
+  const [form, setForm] = useState({
+    code: "",
+    name: "",
+    cost: "",
+  });
+
+  async function fetchMaterials() {
+    const response = await api.get("/raw-materials");
+    setMaterials(response.data);
+  }
+
+  useEffect(() => {
+    const load = async () => {
+      await fetchMaterials();
+    };
+
+    load();
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (editingId !== null) {
+      await api.put(`/raw-materials/${editingId}`, {
+        ...form,
+        cost: Number(form.cost),
+      });
+      setEditingId(null);
+    } else {
+      await api.post("/raw-materials", {
+        ...form,
+        cost: Number(form.cost),
+      });
+    }
+
+    setForm({ code: "", name: "", cost: "" });
+    fetchMaterials();
+  }
+
+  async function handleDelete(id: number) {
+    await api.delete(`/raw-materials/${id}`);
+    fetchMaterials();
+  }
+
+  function handleEdit(material: RawMaterial) {
+    setForm({
+      code: material.code,
+      name: material.name,
+      cost: material.cost.toString(),
+    });
+
+    setEditingId(material.id);
+  }
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">
+        {editingId ? "Editing Raw Material" : "Raw Materials"}
+      </h1>
+
+      <form onSubmit={handleSubmit} className="mb-6 space-y-2">
+        <input
+          placeholder="Code"
+          value={form.code}
+          onChange={(e) => setForm({ ...form, code: e.target.value })}
+          className="border p-2 w-full"
+        />
+
+        <input
+          placeholder="Name"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          className="border p-2 w-full"
+        />
+
+        <input
+          placeholder="Cost"
+          type="number"
+          value={form.cost}
+          onChange={(e) => setForm({ ...form, cost: e.target.value })}
+          className="border p-2 w-full"
+        />
+
+        <button className="bg-blue-500 text-white px-4 py-2">
+          {editingId ? "Update Material" : "Add Material"}
+        </button>
+      </form>
+
+      <ul>
+        {materials.map((material) => (
+          <li
+            key={material.id}
+            className="border p-2 mb-2 flex justify-between items-center"
+          >
+            <span>
+              {material.code} - {material.name} - ${material.cost}
+            </span>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleEdit(material)}
+                className="bg-yellow-500 text-white px-2 py-1"
+              >
+                Edit
+              </button>
+
+              <button
+                onClick={() => handleDelete(material.id)}
+                className="bg-red-500 text-white px-2 py-1"
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

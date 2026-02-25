@@ -229,4 +229,22 @@ router.get("/production/suggestions", async (req, res) => {
 
   return res.json(simulation);
 });
+
+// LISTAR HISTÓRICO DE SIMULAÇÕES
+router.get("/production/simulations", async (req, res) => {
+  const simulations = await prisma.productionSimulation.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      items: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+
+  return res.json(simulations);
+});
 export default router;
