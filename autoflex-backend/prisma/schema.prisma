@@ -18,6 +18,8 @@ model Product {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  productions Production[]
 }
 
 model RawMaterial {
@@ -30,6 +32,8 @@ model RawMaterial {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  productionMaterials ProductionMaterial[]
 }
 
 model ProductRawMaterial {
@@ -65,4 +69,28 @@ model ProductionSimulationItem {
 
   product       Product @relation(fields: [productId], references: [id])
   simulation    ProductionSimulation @relation(fields: [simulationId], references: [id])
+}
+
+model Production {
+  id        Int      @id @default(autoincrement())
+
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+
+  quantityProduced Int
+  createdAt DateTime @default(now())
+
+  materials ProductionMaterial[]
+}
+
+model ProductionMaterial {
+  id            Int     @id @default(autoincrement())
+
+  productionId  Int
+  rawMaterialId Int
+
+  quantityUsed  Decimal @db.Decimal(10, 2)
+
+  production    Production  @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  rawMaterial   RawMaterial @relation(fields: [rawMaterialId], references: [id], onDelete: Cascade)
 }

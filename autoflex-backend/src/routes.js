@@ -247,4 +247,59 @@ router.get("/production/simulations", async (req, res) => {
 
   return res.json(simulations);
 });
+
+router.post("/productions", async (req, res) => {
+  const { productId, quantityProduced, materials } = req.body;
+
+  try {
+    // 1️⃣ Verificar estoque
+    for (const item of materials) {
+      const rawMaterial = await prisma.rawMaterial.findUnique({
+        where: { id: item.rawMaterialId },
+      });
+
+      if (!rawMaterial) {
+        return res.status(404).json({ error: "Raw material not found" });
+      }
+
+      if (Number(rawMaterial.stockQuantity) < Number(item.quantityUsed)) {
+        return res.status(400).json({
+          error: `Insufficient stock for ${rawMaterial.name}`,
+        });
+      }
+    }
+
+    // 2️⃣ Criar produção
+    const production = await prisma.production.create({
+      data: {
+        productId,
+        quantityProduced,
+        materials: {
+          create: materials.map((m) => ({
+            rawMaterialId: m.rawMaterialId,
+            quantityUsed: m.quantityUsed,
+          })),
+        },
+      },
+    });
+
+    // 3️⃣ Atualizar estoque
+    for (const item of materials) {
+      await prisma.rawMaterial.update({
+        where: { id: item.rawMaterialId },
+        data: {
+          stockQuantity: {
+            decrement: Number(item.quantityUsed),
+          },
+        },
+      });
+    }
+
+    return res.json(production);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 export default router;
