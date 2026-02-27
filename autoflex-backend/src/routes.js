@@ -252,50 +252,173 @@ router.post("/productions", async (req, res) => {
   const { productId, quantityProduced, materials } = req.body;
 
   try {
-    // 1️⃣ Verificar estoque
-    for (const item of materials) {
-      const rawMaterial = await prisma.rawMaterial.findUnique({
-        where: { id: item.rawMaterialId },
+    const result = await prisma.$transaction(async (tx) => {
+      // 1️⃣ Verificar estoque
+      for (const item of materials) {
+        const rawMaterial = await tx.rawMaterial.findUnique({
+          where: { id: item.rawMaterialId },
+        });
+
+        if (!rawMaterial) {
+          throw new Error("Raw material not found");
+        }
+
+        if (Number(rawMaterial.stockQuantity) < Number(item.quantityUsed)) {
+          throw new Error(`Insufficient stock for ${rawMaterial.name}`);
+        }
+      }
+
+      // 2️⃣ Criar produção
+      const production = await tx.production.create({
+        data: {
+          productId,
+          quantityProduced,
+          materials: {
+            create: materials.map((m) => ({
+              rawMaterialId: m.rawMaterialId,
+              quantityUsed: m.quantityUsed,
+            })),
+          },
+        },
+        include: {
+          materials: {
+            include: {
+              rawMaterial: true,
+            },
+          },
+          product: true,
+        },
       });
 
-      if (!rawMaterial) {
-        return res.status(404).json({ error: "Raw material not found" });
-      }
-
-      if (Number(rawMaterial.stockQuantity) < Number(item.quantityUsed)) {
-        return res.status(400).json({
-          error: `Insufficient stock for ${rawMaterial.name}`,
+      // 3️⃣ Atualizar estoque matéria-prima
+      for (const item of materials) {
+        await tx.rawMaterial.update({
+          where: { id: item.rawMaterialId },
+          data: {
+            stockQuantity: {
+              decrement: Number(item.quantityUsed),
+            },
+          },
         });
       }
-    }
 
-    // 2️⃣ Criar produção
-    const production = await prisma.production.create({
-      data: {
-        productId,
-        quantityProduced,
-        materials: {
-          create: materials.map((m) => ({
-            rawMaterialId: m.rawMaterialId,
-            quantityUsed: m.quantityUsed,
-          })),
+      // 4️⃣ Atualizar estoque produto acabado
+      await tx.product.update({
+        where: { id: productId },
+        data: {
+          stockQuantity: {
+            increment: Number(quantityProduced),
+          },
         },
+      });
+
+      return production;
+    });
+
+    return res.json(result);
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({ error: error.message });
+  }
+});
+
+router.get("/productions", async (req, res) => {
+  try {
+    const productions = await prisma.production.findMany({
+      include: {
+        product: true,
+        materials: {
+          include: {
+            rawMaterial: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc", // se você tiver esse campo
       },
     });
 
-    // 3️⃣ Atualizar estoque
-    for (const item of materials) {
+    return res.json(productions);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.delete("/productions/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const production = await prisma.production.findUnique({
+      where: { id: Number(id) },
+      include: {
+        materials: true,
+      },
+    });
+
+    if (!production) {
+      return res.status(404).json({ error: "Production not found" });
+    }
+
+    // 🔁 Devolver matéria-prima ao estoque
+    for (const item of production.materials) {
       await prisma.rawMaterial.update({
         where: { id: item.rawMaterialId },
         data: {
           stockQuantity: {
-            decrement: Number(item.quantityUsed),
+            increment: Number(item.quantityUsed),
           },
         },
       });
     }
 
-    return res.json(production);
+    // 🔻 Remover produto acabado do estoque
+    await prisma.product.update({
+      where: { id: production.productId },
+      data: {
+        stockQuantity: {
+          decrement: Number(production.quantityProduced),
+        },
+      },
+    });
+
+    // 🗑 Deletar produção
+    await prisma.production.delete({
+      where: { id: Number(id) },
+    });
+
+    return res.json({ message: "Production canceled successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/reports/material-consumption", async (req, res) => {
+  try {
+    const report = await prisma.productionMaterial.groupBy({
+      by: ["rawMaterialId"],
+      _sum: {
+        quantityUsed: true,
+      },
+    });
+
+    const detailedReport = await Promise.all(
+      report.map(async (item) => {
+        const rawMaterial = await prisma.rawMaterial.findUnique({
+          where: { id: item.rawMaterialId },
+        });
+
+        return {
+          rawMaterialId: item.rawMaterialId,
+          rawMaterialName: rawMaterial.name,
+          totalConsumed: item._sum.quantityUsed,
+          currentStock: rawMaterial.stockQuantity,
+        };
+      }),
+    );
+
+    return res.json(detailedReport);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });
