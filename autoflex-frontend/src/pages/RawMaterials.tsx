@@ -66,36 +66,36 @@ export default function RawMaterials() {
   }
 
   return (
-    <div className="p-6">
+    <div className="bg-white p-8 rounded-xl shadow-md">
       <h1 className="text-2xl font-bold mb-4">
-        {editingId ? "Editing Raw Material" : "Raw Materials"}
+        {editingId ? "Editar Matéria Prima" : "Matérias Primas"}
       </h1>
 
       <form onSubmit={handleSubmit} className="mb-6 space-y-2">
         <input
-          placeholder="Code"
+          placeholder="Código"
           value={form.code}
           onChange={(e) => setForm({ ...form, code: e.target.value })}
-          className="border p-2 w-full"
+          className="w-full border border-blue-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
 
         <input
-          placeholder="Name"
+          placeholder="Nome"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="border p-2 w-full"
+          className="w-full border border-blue-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
 
         <input
-          placeholder="Stock Quantity (kg)"
+          placeholder="Quantidade em Estoque (kg)"
           type="number"
           value={form.stockQuantity}
           onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })}
-          className="border p-2 w-full"
+          className="w-full border border-blue-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
 
         <button className="bg-blue-500 text-white px-4 py-2">
-          {editingId ? "Update Material" : "Add Material"}
+          {editingId ? "Atualizar Matéria Prima" : "Adicionar Matéria Prima"}
         </button>
       </form>
 
@@ -114,14 +114,14 @@ export default function RawMaterials() {
                 onClick={() => handleEdit(material)}
                 className="bg-yellow-500 text-white px-2 py-1"
               >
-                Edit
+                Editar
               </button>
 
               <button
                 onClick={() => handleDelete(material.id)}
                 className="bg-red-500 text-white px-2 py-1"
               >
-                Delete
+                Excluir
               </button>
             </div>
           </li>

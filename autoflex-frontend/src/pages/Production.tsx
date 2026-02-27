@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/api";
+import toast from "react-hot-toast";
 
 interface Product {
   id: number;
   name: string;
 }
-
 interface RawMaterial {
   id: number;
   name: string;
+  stockQuantity: number;
 }
 
 export default function Production() {
@@ -25,6 +26,8 @@ export default function Production() {
     { rawMaterialId: number; quantityUsed: number }[]
   >([]);
 
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     async function load() {
       const p = await api.get("/products");
@@ -39,34 +42,41 @@ export default function Production() {
 
   async function handleCreate() {
     if (!productId || !quantityProduced || selectedMaterials.length === 0) {
-      alert("Fill all fields");
+      toast.error("Preencha todos os campos e adicione pelo menos um material");
       return;
     }
 
-    await api.post("/productions", {
-      productId: Number(productId),
-      quantityProduced: Number(quantityProduced),
-      materials: selectedMaterials,
-    });
+    try {
+      setLoading(true);
 
-    alert("Production created!");
+      await api.post("/productions", {
+        productId: Number(productId),
+        quantityProduced: Number(quantityProduced),
+        materials: selectedMaterials,
+      });
 
-    setProductId("");
-    setQuantityProduced("");
-    setSelectedMaterials([]);
+      toast.success("Produto Criado com Sucesso!");
+      setProductId("");
+      setQuantityProduced("");
+      setSelectedMaterials([]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || "Erro na Criação do Produto");
+    } finally {
+      setLoading(false);
+    }
   }
-
   return (
-    <div className="bg-white p-8 rounded-xl shadow-md max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Production</h1>
+    <div className="bg-white p-8 rounded-xl shadow-md">
+      <h1 className="text-2xl font-bold mb-4">Produção</h1>
 
       <div className="space-y-3">
         <select
           value={productId}
           onChange={(e) => setProductId(e.target.value)}
-          className="border p-2 w-full"
+          className="w-full border border-blue-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         >
-          <option value="">Select Product</option>
+          <option value="">Selecionar o Produto</option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -76,40 +86,40 @@ export default function Production() {
 
         <input
           type="number"
-          placeholder="Quantity Produced"
+          placeholder="Quantidade Produzida"
           value={quantityProduced}
           onChange={(e) => setQuantityProduced(e.target.value)}
           className="border border-blue-200 focus:ring-2 focus:ring-blue-400 focus:outline-none p-2 rounded-lg w-full"
         />
         <div className="border p-3">
-          <h2 className="font-bold mb-2">Add Raw Material</h2>
+          <h2 className="font-bold mb-2">Adicionar Matéria Prima</h2>
 
           <select
             value={selectedMaterialId}
             onChange={(e) => setSelectedMaterialId(e.target.value)}
             className="border p-2 w-full mb-2"
           >
-            <option value="">Select Material</option>
+            <option value="">Selecionar Material</option>
             {materials.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name}
+                {m.name} (Stock: {m.stockQuantity})
               </option>
             ))}
           </select>
 
           <input
             type="number"
-            placeholder="Quantity Used"
+            placeholder="Quantidade Usada"
             value={materialQuantity}
             onChange={(e) => setMaterialQuantity(e.target.value)}
-            className="border border-blue-200 focus:ring-2 focus:ring-blue-400 focus:outline-none p-2 rounded-lg w-full"
+            className="border border-blue-200 focus:ring-2 focus:ring-blue-400 focus:outline-none p-2 rounded-lg w-full mb-4"
           />
 
           <button
             type="button"
             onClick={() => {
               if (!selectedMaterialId || !materialQuantity) {
-                alert("Select material and quantity");
+                toast.error("Selecione material e quantidade");
                 return;
               }
 
@@ -118,7 +128,7 @@ export default function Production() {
               );
 
               if (alreadyAdded) {
-                alert("Material already added");
+                toast.error("Material já adicionado");
                 return;
               }
 
@@ -135,11 +145,11 @@ export default function Production() {
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
           >
-            Add Material
+            Adicionar Material
           </button>
           {selectedMaterials.length > 0 && (
             <div className="mt-3">
-              <h3 className="font-semibold mb-2">Selected Materials</h3>
+              <h3 className="font-semibold mb-2">Materiais Selecionados</h3>
 
               <ul className="space-y-1">
                 {selectedMaterials.map((item, index) => {
@@ -164,7 +174,7 @@ export default function Production() {
                         }
                         className="bg-red-500 text-white px-2 py-1"
                       >
-                        Remove
+                        Remover
                       </button>
                     </li>
                   );
@@ -176,9 +186,10 @@ export default function Production() {
 
         <button
           onClick={handleCreate}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+          disabled={loading}
+          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg transition"
         >
-          Create Production
+          {loading ? "Criando..." : "Criar Produção"}
         </button>
       </div>
     </div>

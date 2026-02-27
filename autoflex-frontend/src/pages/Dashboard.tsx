@@ -4,26 +4,26 @@ import { Factory, Package, Layers, BarChart3 } from "lucide-react";
 export default function Dashboard() {
   const cards = [
     {
-      title: "New Production",
-      description: "Register a new production order",
+      title: "Nova Produção",
+      description: "Registre uma novar ordem de produção",
       icon: Factory,
       path: "/production",
     },
     {
-      title: "Manage Products",
-      description: "Create and edit products",
+      title: "Gerenciar Produtos",
+      description: "Crie e edite produtos",
       icon: Package,
       path: "/products",
     },
     {
-      title: "Raw Materials",
-      description: "Control stock and materials",
+      title: "Matéria Prima",
+      description: "Controle estoque e materiais",
       icon: Layers,
       path: "/materials",
     },
     {
-      title: "Reports",
-      description: "View material consumption",
+      title: "Relatórios",
+      description: "Visualize consumo de materiais",
       icon: BarChart3,
       path: "/reports",
     },
@@ -32,7 +32,7 @@ export default function Dashboard() {
   return (
     <div>
       <h1 className="text-3xl font-bold text-blue-700 mb-8">
-        Production Dashboard
+        Painel de Produção
       </h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
