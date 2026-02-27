@@ -5,7 +5,7 @@ interface RawMaterial {
   id: number;
   code: string;
   name: string;
-  cost: number;
+  stockQuantity: number;
 }
 
 export default function RawMaterials() {
@@ -14,7 +14,7 @@ export default function RawMaterials() {
   const [form, setForm] = useState({
     code: "",
     name: "",
-    cost: "",
+    stockQuantity: "",
   });
 
   async function fetchMaterials() {
@@ -36,17 +36,17 @@ export default function RawMaterials() {
     if (editingId !== null) {
       await api.put(`/raw-materials/${editingId}`, {
         ...form,
-        cost: Number(form.cost),
+        stockQuantity: Number(form.stockQuantity),
       });
       setEditingId(null);
     } else {
       await api.post("/raw-materials", {
         ...form,
-        cost: Number(form.cost),
+        stockQuantity: Number(form.stockQuantity),
       });
     }
 
-    setForm({ code: "", name: "", cost: "" });
+    setForm({ code: "", name: "", stockQuantity: "" });
     fetchMaterials();
   }
 
@@ -59,7 +59,7 @@ export default function RawMaterials() {
     setForm({
       code: material.code,
       name: material.name,
-      cost: material.cost.toString(),
+      stockQuantity: material.stockQuantity.toString(),
     });
 
     setEditingId(material.id);
@@ -87,10 +87,10 @@ export default function RawMaterials() {
         />
 
         <input
-          placeholder="Cost"
+          placeholder="Stock Quantity (kg)"
           type="number"
-          value={form.cost}
-          onChange={(e) => setForm({ ...form, cost: e.target.value })}
+          value={form.stockQuantity}
+          onChange={(e) => setForm({ ...form, stockQuantity: e.target.value })}
           className="border p-2 w-full"
         />
 
@@ -106,7 +106,7 @@ export default function RawMaterials() {
             className="border p-2 mb-2 flex justify-between items-center"
           >
             <span>
-              {material.code} - {material.name} - ${material.cost}
+              {material.code} - {material.name} - {material.stockQuantity} kg
             </span>
 
             <div className="flex gap-2">
