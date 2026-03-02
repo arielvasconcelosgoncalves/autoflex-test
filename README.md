@@ -78,7 +78,7 @@ npm install
 
 13. **Rode o backend:** 
 ```
-npm run rev
+npm run dev
 
 ```
 
