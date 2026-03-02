@@ -55,7 +55,7 @@ npx prisma migrate dev
 7. **Rode o backend:**
 
 ```
-npm run rev
+npm run dev
 
 ```
 
@@ -76,7 +76,11 @@ npm install
 
 ```
 
-13. **Rode o backend:** npm run rev
+13. **Rode o backend:** 
+```
+npm run rev
+
+```
 
 **O backend estará disponível em: http://localhost:5137**
 
