@@ -154,5 +154,6 @@ src/
   └── index.css
 ```
 
-👨‍💻 Autor
-Desenvolvido por Ariel Vasconcelos
+## 👨‍💻 Autor
+
+### Desenvolvido por Ariel Vasconcelos
